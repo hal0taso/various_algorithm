@@ -2,4 +2,4 @@
 
 algorithm implementation for self-education
 
-refere to glibc and books.
+refer to glibc and books.
