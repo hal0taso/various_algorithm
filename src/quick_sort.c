@@ -30,7 +30,7 @@ void quick_sort(int a[], int left, int right){
     i ++;
     j --;
   }
-  show_data(a, sizeof(a)/sizeof(a[0]));
+  show_data(a, sizeof(a)/sizeof(int));
 
   if (left < i -1){
     quick_sort(a, left, i - 1);
@@ -60,21 +60,26 @@ void show_data(int a[], int n){
 }
 
 int main(int argc, char *argv[]){
-
-  int a[argc];
   
-  for (int i = 1; i <= argc; i ++){
-    a[i] = atoi(argv[i]);
+  int a[argc-1];
+  
+  for (int i = 1; i < argc; i ++){
+    a[i-1] = atoi(argv[i]);
   }
 
+  /*
+    in osx, argc returns number of argument incuding argv[0]
+    printf("%d\n", argc);
+  */
+  
   printf("[*] Before sort:\n");
-  show_data(a, argc);
+  show_data(a, argc-1);
 
   printf("[*] Sorting...\n");
-  quick_sort(a, 0, argc - 1);
+  quick_sort(a, 0, argc-1);
 
   printf("[*] After sort:\n");
-  show_data(a, argc);
+  show_data(a, argc-1);
 
   return 0;
 }
