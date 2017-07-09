@@ -3,8 +3,8 @@
 
 void quick_sort(int a[], int left, int right);
 void swap(int a[], int i, int j);
-void show(int a[], int n);
-void main(void);
+void show_data(int a[], int n);
+int main(int argc, char *argv[]);
 
 void quick_sort(int a[], int left, int right){
   int i, j;
@@ -30,7 +30,7 @@ void quick_sort(int a[], int left, int right){
     i ++;
     j --;
   }
-  show(a, sizeof(a)/sizeof(a[0]));
+  show_data(a, sizeof(a)/sizeof(a[0]));
 
   if (left < i -1){
     quick_sort(a, left, i - 1);
@@ -41,6 +41,40 @@ void quick_sort(int a[], int left, int right){
 }
 
 
-//void swap(int a[], int i, int j){
-//  
-//}
+void swap(int a[], int i, int j){
+
+  int tmp;
+
+  tmp = a[i];
+  a[i] = a[j];
+  a[j] = tmp;
+}
+
+// show n data in array
+void show_data(int a[], int n){
+  
+  for(int i = 0; i < n; i ++){
+    printf("%d ", a[i]);
+  }
+  putchar('\n');
+}
+
+int main(int argc, char *argv[]){
+
+  int a[argc];
+  
+  for (int i = 1; i <= argc; i ++){
+    a[i] = atoi(argv[i]);
+  }
+
+  printf("[*] Before sort:\n");
+  show_data(a, argc);
+
+  printf("[*] Sorting...\n");
+  quick_sort(a, 0, argc - 1);
+
+  printf("[*] After sort:\n");
+  show_data(a, argc);
+
+  return 0;
+}
