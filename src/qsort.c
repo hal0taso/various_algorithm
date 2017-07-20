@@ -13,7 +13,8 @@ void quick_sort(int a[], int left, int right){
   i = left;
   j = right;
 
-  pivot = a[(left + right) / 2];
+  //  pivot = a[(left + right) / 2];
+  pivot = a[left + 1];
 
   while(1){
     while(a[i] < pivot){
@@ -61,7 +62,7 @@ void show_data(int a[], int n){
 
 int main(int argc, char *argv[]){
 
-  if (argc < 1){
+  if (argc < 2){
     perror("[!] usage: ./qsort.c [num1 [num2 [...]]]");
     exit(0);
   }
@@ -75,12 +76,14 @@ int main(int argc, char *argv[]){
     in osx, argc returns number of argument incuding argv[0]
     printf("%d\n", argc);
   */
-  
+
+  printf("%d\n", argc);
+
   printf("[*] Before sort:\n");
   show_data(a, argc-1);
 
   printf("[*] Sorting...\n");
-  quick_sort(a, 0, argc-1);
+  quick_sort(a, 0, argc-2);
 
   printf("[*] After sort:\n");
   show_data(a, argc-1);
