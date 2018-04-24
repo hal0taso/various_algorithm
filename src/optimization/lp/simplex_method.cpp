@@ -5,163 +5,184 @@
 #include <iostream>  // for cout
 #include <stdio.h>   // for printf()
 #include <vector>
+#include <iomanip>
 
 using namespace std;
 
 /*
  * 計算クラス
  */
-class LP
-{
+class LP{
+
   // 各種変数
-  int rowNum, colNum; // 係数行列のパラメタ
-  int varNum;         // 制約式の変数数
-  vector<vector<double> > matConst; // 係数行列
+  unsigned int rows, cols; // 係数行列のパラメタ
+  unsigned int vars;         // 制約式の変数数
+  vector<vector<double> > matrix; // 係数行列
   double min, p, d;
-  int i, j, k, x, y; // indexを保存する
-  int flag;
 
 public:
-  // rowConst: 制約の本数, varConst: 制約の変数数, ieqConst: 不等式標準形の制約式
-  LP(int rowConst, int varConst, vector<vector<double> > ieqConst)
-  {
-    varNum = varConst + rowConst;     // 実際の変数の数 = 制約の本数 + 変数の数
-    rowNum = rowConst + 1;            // 係数行列の行数 = 制約の本数 + 1(目的関数)
-    colNum = varConst + rowConst + 1; // 係数行列の列数 = 制約の本数 + 変数の数 + 1
 
-    // 元の制約式の係数を代入
-    for (i = 0; i < varConst; ++i){
-      for (j = 0; j < colNum; ++j){
-        matConst[i][j] = ieqConst[i][j];
-      }
+  // rowConst: 制約の本数, varConst: 制約の変数数, ieqConst: 不等式標準形の制約式
+  LP(unsigned int rowNum, unsigned int colNum, unsigned int varNum, vector<double> &objFunc, vector<vector<double> > &ieqConst);
+  void Simplex();   // シンプレックス法
+  void Disp(bool flag);
+
+};
+
+// rowConst: 制約の本数, varConst: 制約の変数数, ieqConst: 不等式標準形の制約式
+LP::LP(unsigned int rowNum, unsigned int colNum, unsigned int varNum, vector<double> &objFunc, vector<vector<double> > &ieqConst){
+
+  unsigned int i, j; // indexを保存する
+  vars = varNum + rowNum; // 実際の変数の数 = 制約の本数 + 変数の数
+  rows = rowNum + 1; // 係数行列の行数 = 制約の本数 + 1(目的関数)
+  cols = vars + 1; // 係数行列の列数 = 制約の本数 + 変数の数 + 1
+
+  matrix = vector<vector<double> >(rows, vector<double>(cols, 0.0));
+
+  // 元の制約式の係数を代入
+  for (i = 0; i < rowNum; ++i){
+    for (j = 0; j < varNum; ++j){
+      matrix[i][j] = ieqConst[i][j];
     }
-    // スラック変数の係数1.0として代入
-    for (i = 0; i < rowNum; i ++){
-      if (i < rowNum - 1){
-        for (j = varConst; j < colNum - 1; j ++){
-          matConst[i][j] = 1.0;
-        }
-      } else {
-        matConst[i][j] = 0.0;
-      }
-    }
-    // 定数項の値を代入
-    for (i = 0; i < rowNum; i ++){
-      if (i < rowNum - 1){
-        matConst[i][colNum - 1] = ieqConst[i][varConst];
-      } else {
-        matConst[i][colNum - 1] = 0.0;
+  }
+
+  // 定数項の値を代入
+  for (i = 0; i < rowNum; ++i){
+    matrix[i][cols - 1] = ieqConst[i][varNum];
+  }
+
+  // スラック変数の係数1.0として代入
+  for (i = 0; i < rowNum; ++i){
+    for (j = varNum; j < cols - 1; j ++){
+      if (i == j - varNum){
+        matrix[i][j] = 1.0;
       }
     }
   }
 
-  void Calc();   // 線形計画法
-};
+  // 目的関数の係数を入れる
+  for (i = 0; i < cols; ++ i){
+    if(i < varNum){
+      matrix[rows - 1][i] = objFunc[i];
+    }
+  }
 
-/*
- * 線形計画法
- */
-void LP::Calc()
-{
+}
 
-  while (1) {
-    // 列選択
-    min = 0xffff;
-    for (k = 0; k < colNum - 1; k++) {
-      if (matConst[rowNum - 1][k] < min) {
-        min = matConst[rowNum - 1][k];
-        y = k;
+// flag: デフォルト: false, LPを解いた後: true
+void LP::Disp(bool flag){
+  unsigned int i, j;
+  if (!flag){
+    for (i = 0; i < rows; ++i){
+      for (j = 0; j < cols; ++j){
+        if (j != cols - 1){
+          cout << setw(3) << right << matrix[i][j] << " ";
+        } else {
+          cout << setw(3) << right<< matrix[i][j] << "\n";
+        }
       }
     }
+  } else {
+    // 最適解と最適値の出力
+    for (j = 0; j < vars - rows + 1; ++j){
+      for (i = 0; i < rows; ++i){
+        if (matrix[i][j] == 1){
+          cout << "x" << j << ": " << setw(3) << right << matrix[i][cols - 1] << "\n";
+        }
+      }
+    }
+    cout << "optimal solution: " << matrix[rows - 1][cols - 1] << "\n";
+  }
+}
+
+/*
+ * シンプレックス法
+ */
+void LP::Simplex(){
+
+  unsigned int i, j, x, y; // indexを保存する
+  while (1) {
+    // 効率的に目的関数を最小化できる列を選択する.
+    min = 0xfffffff;
+    for (i = 0; i < cols - 1; ++i) {
+      if (matrix[rows - 1][i] < min) {
+        min = matrix[rows - 1][i];
+        y = i;
+      }
+    }
+
+    // 目的関数値がこれ以上小さくならない場合には繰り返しを終了する
     if (min >= 0) break;
 
-    // 行選択
-    min = 0xffff;
-    for (k = 0; k < rowNum - 1; k++) {
-      p = matConst[k][colNum - 1] / matConst[k][y];
-      if (matConst[k][y] > 0 && p < min) {
+    // 各制約式で変数x_yがどこまで増やせるかを調べる
+    min = 0xfffffff;
+    for (i = 0; i < rows - 1; ++i) {
+      p = matrix[i][cols - 1] / matrix[i][y];
+      if (matrix[i][y] > 0 && p < min) {
         min = p;
-        x = k;
+        x = i;
       }
     }
 
     // ピボット係数
-    p = matConst[x][y];
+    p = matrix[x][y];
 
-    // ピボット係数を p で除算
-    for (k = 0; k < colNum; k++)
-      matConst[x][k] = matConst[x][k] / p;
-
+    // ピボットが1になるように, ピボットのある行の全てをピボット係数 p で除算
+    for (i = 0; i < cols; ++i){
+      matrix[x][i] = matrix[x][i] / p;
+    }
     // ピボット列の掃き出し
-    for (k = 0; k < rowNum; k++) {
-      if (k != x) {
-        d = matConst[k][y];
-        for (j = 0; j < colNum; j++)
-          matConst[k][j] = matConst[k][j] - d * matConst[x][j];
+    for (i = 0; i < rows; ++i) {
+      if (i != x) {
+        d = matrix[i][y];
+        for (j = 0; j < cols; ++j)
+          matrix[i][j] = matrix[i][j] - d * matrix[x][j];
       }
     }
   }
-
-  // 結果出力
-  for (k = 0; k < varNum; k++) {
-    flag = -1;
-    for (j = 0; j < rowNum; j++) {
-      // ==== 2016-11-14 UPDATE ===>
-      // if (a[j][k] == 1) flag = j;
-      if (matConst[j][k] == 1) {
-        flag = j;
-      } else if (flag != -1 && matConst[j][k] != 0) {
-        flag = -1;
-        break;
-      }
-      // <=== 2016-11-14 UPDATE ====
-    }
-    if (flag != -1)
-      printf("x%d = %8.4f\n", k, matConst[flag][colNum - 1]);
-    else
-      printf("x%d = %8.4f\n", k, 0.0);
-  }
-  printf("z  = %8.4f\n", matConst[rowNum - 1][colNum - 1]);
 }
 
 /*
  * メイン処理
  */
-int main()
-{
-  try
-    {
-      int N, M;
-      vector<vector<double> > ieqConst;
-      cin >> N >> M;
-      cout << N << " " << M << "\n";
-      ieqConst = vector<vector<double> >(N, vector<double>(M, 0));
+int main(){
 
-      for(int i = 0; i < N; ++i){
-        cout << "[" << i << "]";
-        for (int j = 0; j < M; ++j){
-          cin >> ieqConst[i][j];
-          cout << ieqConst[i][j] << " ";
-        }
-      }
+  unsigned int rowNum, colNum, varNum, i, j;
+  vector<vector<double>> ieqConst;
+  vector<double> objFunc;
+  double c;
 
-      cout << "hello";
+  /* Get a parameter of problem*/
+  cin >> rowNum >> colNum >> varNum;
 
-      for(int i = 0; i < N; ++i){
-        for(int j = 0; j < M; ++j){
-          cout << ieqConst[i][j]<< " ";
-        }
-      }
-
-      // 計算クラスインスタンス化
-      LP objLP(N, M, ieqConst);
-      // 線形計画法
-      objLP.Calc();
-    }
-  catch (...) {
-    cout << "例外発生！" << endl;
-    return -1;
+  /* Get coefficients of objective function */
+  objFunc = vector<double>(varNum, 0);
+  for(i = 0; i < varNum; ++i){
+    cin >> c;
+    objFunc[i] = c;
+    cout << c;
   }
+  cout << "\n";
+
+  /* Get coefficients of construction inequality*/
+  ieqConst = vector<vector<double> >(rowNum, vector<double>(colNum, 0));
+  for(i = 0; i < rowNum; ++i){
+    for (j = 0; j < colNum; ++j){
+      cin >> c;
+      ieqConst[i][j] = c;
+      cout << c << " ";
+    }
+    cout << "\n";
+  }
+
+
+  // 計算クラスインスタンス化
+  LP objLP(rowNum, rowNum, varNum, objFunc, ieqConst);
+  objLP.Disp(false);
+
+  // シンプレックス法
+  objLP.Simplex();
+  objLP.Disp(true);
 
   // 正常終了
   return 0;
